@@ -63,6 +63,19 @@ NekViscousSurfaceForce::getValue() const
     return drag[1];
   else if (_component == "z")
     return drag[2];
+  if (_component == "total")
+  {
+    nrs_t * nrs = (nrs_t *)nekrs::nrsPtr();
+    //postProcessing::strainRate(nrs, true, nrs->o_U, o_Sij);
+    auto o_Sij = nrs->strainRate();
+
+    occa::memory o_b = platform->device.malloc<int>(_boundary.size(), _boundary.data());
+    // TODO
+    //const auto drag = postProcessing::viscousDrag(nrs, _boundary.size(), o_b, o_Sij);
+    o_Sij.free();
+    Real drag = 1;
+    return drag;
+  }
   else
     mooseError("Unknown 'component' in NekViscousSurfaceForce!");
 }
