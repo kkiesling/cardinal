@@ -65,7 +65,7 @@ NekViscousSurfaceForce::getValue() const
     return drag[2];
   if (_component == "total")
   {
-    nrs_t * nrs = (nrs_t *)nekrs::nrsPtr();
+    auto nrs = nekrs::nrsPtr();
     //postProcessing::strainRate(nrs, true, nrs->o_U, o_Sij);
     auto o_Sij = nrs->strainRate();
 
