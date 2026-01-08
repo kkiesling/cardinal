@@ -2674,6 +2674,26 @@ OpenMCCellAverageProblem::syncSolutions(ExternalProblem::Direction direction)
 }
 
 void
+OpenMCCellAverageProblem::checkTallySum(const unsigned int & score) const
+{
+  if (std::abs(_global_sum_tally[score] - _local_sum_tally[score]) / _global_sum_tally[score] >
+      1e-6)
+  {
+    std::stringstream msg;
+    msg << _all_tally_scores[score] << " tallies do not match the global "
+        << _all_tally_scores[score] << " tally:\n"
+        << " Global value: " << Moose::stringify(_global_sum_tally[score])
+        << "\n Tally sum:    " << Moose::stringify(_local_sum_tally[score])
+        << "\n Difference:   " << _global_sum_tally[score] - _local_sum_tally[score]
+        << "\n\nThis means that the tallies created by Cardinal are missing some hits over the "
+           "domain.\n"
+        << "You can turn off this check by setting 'check_tally_sum' to false.";
+
+    mooseError(msg.str());
+  }
+}
+
+void
 OpenMCCellAverageProblem::createQRules(QuadratureType type,
                                        Order order,
                                        Order volume_order,

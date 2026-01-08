@@ -88,7 +88,10 @@ public:
    * @return numeric index for the variable in the auxiliary system
    */
   unsigned int addExternalVariable(const std::string & name,
+<<<<<<< HEAD
                                    const std::string & system,
+=======
+>>>>>>> c2037e2a (clang format)
                                    const std::vector<SubdomainName> * block = nullptr);
 
   /**
