@@ -961,4 +961,7 @@ std::vector<dfloat> & host_U();
 std::vector<dfloat> & host_P();
 std::vector<dfloat> & host_S();
 dfloat * host_wrk();
+
+void registerMeshKernels();
+
 } // end namespace nekrs
