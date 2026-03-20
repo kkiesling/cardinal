@@ -1,44 +1,42 @@
-#include <math.h>
-#include "udf.hpp"
+#ifdef __okl__
+#include "msfr.oudf"
+#endif
 
-static occa::kernel mooseHeatSourceKernel;
-
-void userq(nrs_t * nrs, double time, occa::memory o_S, occa::memory o_FS)
+void userq(double time, occa::memory o_S, occa::memory o_FS)
 {
   // note: when running with Cardinal, Cardinal will allocate the usrwrk
   // array. If running with NekRS standalone (e.g. nrsmpi), you need to
   // replace the usrwrk with some other value or allocate it youself from
   // the udf and populate it with values.
-  auto mesh = nrs->cds->mesh[0];
-  mooseHeatSourceKernel(mesh->Nelements, 0, nrs->o_usrwrk, o_FS);
+  auto mesh = nrs->meshV;
+  mooseHeatSource(mesh->Nelements, 0, platform->app->bc->o_usrwrk, o_FS);
 }
 
-void UDF_LoadKernels(occa::properties& kernelInfo)
+void UDF_LoadKernels(deviceKernelProperties& kernelInfo)
 {
-   mooseHeatSourceKernel = oudfBuildKernel(kernelInfo, "mooseHeatSource");
 }
 
-void UDF_Setup(nrs_t *nrs)
+void UDF_Setup()
 {
-  udf.sEqnSource = &userq;
+  nrs->scalarSolve->addSource("temperature", userq);
 }
 
-void UDF_ExecuteStep(nrs_t *nrs, double time, int tstep)
+void UDF_ExecuteStep(double time, int tstep)
 {
   // call userchk every step for recycle inlet
   nek::ocopyToNek(time, tstep);
   nek::userchk();
 
- 	mesh_t *mesh = nrs->meshV;
+  auto mesh = nrs->meshV;
   if (tstep == 0)
   {
     double *uin= (double *) nek::scPtr(2);
-    nrs->o_usrwrk.copyFrom(uin, mesh->Nelements * mesh->Np * sizeof(dfloat), 2*nrs->fieldOffset*sizeof(dfloat));
+    platform->app->bc->o_usrwrk.copyFrom(uin, mesh->Nelements * mesh->Np * sizeof(dfloat), 2*nrs->fieldOffset*sizeof(dfloat));
 
     double *vin= (double *) nek::scPtr(3);
-    nrs->o_usrwrk.copyFrom(vin, mesh->Nelements * mesh->Np * sizeof(dfloat), 3*nrs->fieldOffset*sizeof(dfloat));
+    platform->app->bc->o_usrwrk.copyFrom(vin, mesh->Nelements * mesh->Np * sizeof(dfloat), 3*nrs->fieldOffset*sizeof(dfloat));
 
     double *win= (double *) nek::scPtr(4);
-    nrs->o_usrwrk.copyFrom(win, mesh->Nelements * mesh->Np * sizeof(dfloat), 4*nrs->fieldOffset*sizeof(dfloat));
+    platform->app->bc->o_usrwrk.copyFrom(win, mesh->Nelements * mesh->Np * sizeof(dfloat), 4*nrs->fieldOffset*sizeof(dfloat));
   }
 }

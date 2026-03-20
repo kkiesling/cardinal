@@ -150,73 +150,74 @@ void grad_u(dfloat *grad_u_x,
   }
 }
 
-void velocityDirichletConditions(bcData *bc)
+void udfDirichlet(bcData *bc)
 {
-  dfloat u, v, w, p;
-  exact(&u, &v, &w, &p, bc->x, bc->y, bc->z, bc->time, p_nu);
-  bc->u = u;
-  bc->v = v;
-  bc->w = w;
+  if (isField("fluid velocity"))
+  {
+    dfloat u, v, w, p;
+    exact(&u, &v, &w, &p, bc->x, bc->y, bc->z, bc->time, p_nu);
+    bc->uxFluid = u;
+    bc->uyFluid = v;
+    bc->uzFluid = w;
+  }
+  else if (isField("scalar s00") || isField("scalar temperature"))
+  {
+    dfloat u, v, w, p;
+    exact(&u, &v, &w, &p, bc->x, bc->y, bc->z, bc->time, p_nu);
+    bc->sScalar = u;
+  }
 }
 
-void scalarDirichletConditions(bcData *bc)
-{
-  dfloat u, v, w, p;
-  exact(&u, &v, &w, &p, bc->x, bc->y, bc->z, bc->time, p_nu);
-  bc->s = u;
-}
-
-void scalarNeumannConditions(bcData *bc)
+void udfNeumann(bcData *bc)
 {
   dfloat grad_u_x, grad_u_y, grad_u_z;
   grad_u(&grad_u_x, &grad_u_y, &grad_u_z, bc->x, bc->y, bc->z, bc->time, p_nu);
-  bc->flux = p_nu * (grad_u_x * bc->nx + grad_u_y * bc->ny + grad_u_z * bc->nz);
+  bc->fluxScalar = p_nu * (grad_u_x * bc->nx + grad_u_y * bc->ny + grad_u_z * bc->nz);
 }
 
 #endif
 
-void userq(nrs_t *nrs, double time, occa::memory o_S, occa::memory o_FS)
+void userq(double time, occa::memory o_S, occa::memory o_FS)
 {
   mesh_t *mesh = nrs->meshV;
-  cds_t *cds = nrs->cds;
-  const dlong Nlocal = nrs->meshV->Nelements * nrs->meshV->Np;
+  const dlong Nlocal = mesh->Nlocal;
 
-  dpdx(Nlocal, time, mesh->o_x, mesh->o_y, mesh->o_z, 0 * cds->fieldOffset[0], o_FS);
-  dpdx(Nlocal, time, mesh->o_x, mesh->o_y, mesh->o_z, 1 * cds->fieldOffset[0], o_FS);
+  dpdx(Nlocal, time, mesh->o_x, mesh->o_y, mesh->o_z, 0 * nrs->scalar->fieldOffset(), o_FS);
+  dpdx(Nlocal, time, mesh->o_x, mesh->o_y, mesh->o_z, 1 * nrs->scalar->fieldOffset(), o_FS);
 }
 
-void UDF_LoadKernels(occa::properties &kernelInfo)
+void UDF_LoadKernels(deviceKernelProperties &kernelInfo)
 {
   setupAide &options = platform->options;
 
   dfloat mue, rho;
-  options.getArgs("VISCOSITY", mue);
-  options.getArgs("DENSITY", rho);
-  kernelInfo["defines/p_nu"] = mue / rho;
-  kernelInfo["defines/p_U0"] = 0.5;
-  kernelInfo["defines/p_V0"] = 0.1;
-  kernelInfo["defines/p_W0"] = 0.2;
-  kernelInfo["defines/p_A"] = 0.025 * M_PI;
-  kernelInfo["defines/p_D"] = 0.5 * M_PI;
-  kernelInfo["defines/p_amp"] = 1.5;
-  kernelInfo["defines/p_omega"] = 15.0;
-  kernelInfo["defines/p_pi"] = M_PI;
+  options.getArgs("FLUID VISCOSITY", mue);
+  options.getArgs("FLUID DENSITY", rho);
+  kernelInfo.define("p_nu") = mue / rho;
+  kernelInfo.define("p_U0") = 0.5;
+  kernelInfo.define("p_V0") = 0.1;
+  kernelInfo.define("p_W0") = 0.2;
+  kernelInfo.define("p_A") = 0.025 * M_PI;
+  kernelInfo.define("p_D") = 0.5 * M_PI;
+  kernelInfo.define("p_amp") = 1.5;
+  kernelInfo.define("p_omega") = 15.0;
+  kernelInfo.define("p_pi") = M_PI;
 }
 
-void UDF_Setup(nrs_t *nrs)
+void UDF_Setup()
 {
-  udf.sEqnSource = &userq;
+  nrs->scalarSolve->addSource("temperature", userq);
+  nrs->scalarSolve->addSource("s01", userq);
 }
 
-void UDF_ExecuteStep(nrs_t *nrs, double time, int tstep)
+void UDF_ExecuteStep(double time, int tstep)
 {
   mesh_t *mesh = nrs->meshV;
-  cds_t *cds = nrs->cds;
 
   if (tstep <= 5) {
-    exactUVWP(mesh->Nlocal, time, mesh->o_x, mesh->o_y, mesh->o_z, nrs->fieldOffset, nrs->o_P, nrs->o_U);
-    ellipticZeroMean(nrs->pSolver, nrs->o_P);
-    cds->o_S.copyFrom(nrs->o_U, mesh->Nlocal, 0 * cds->fieldOffset[0]);
-    cds->o_S.copyFrom(nrs->o_U, mesh->Nlocal, 1 * cds->fieldOffset[0]);
+    exactUVWP(mesh->Nlocal, time, mesh->o_x, mesh->o_y, mesh->o_z, nrs->fieldOffset, nrs->fluid->o_p, nrs->fluid->o_U);
+    ellipticZeroMean(nrs->pSolver, nrs->fluid->o_p);
+    nrs->scalar->o_solution("temperature").copyFrom(nrs->fluid->o_U, mesh->Nlocal, 0 * nrs->fieldOffset);
+    nrs->scalar->o_solution("s01").copyFrom(nrs->fluid->o_U, mesh->Nlocal, 1 * nrs->fieldOffset);
   }
 }

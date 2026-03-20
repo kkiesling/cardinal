@@ -4,7 +4,9 @@
   numSteps = 16000
   dt = 2.0e-4
   timeStepper = tombo2
-  writeInterval = 2000
+  checkpointInterval = 2000
+
+  scalars = temperature
 
   filtering = hpfrt
   filterWeight = 0.1/${dt}
@@ -12,17 +14,17 @@
 
   subCyclingSteps = 2
 
-[PRESSURE]
+[FLUID PRESSURE]
   residualTol = 1.0e-4
 
-[VELOCITY]
-  boundaryTypeMap = inlet, outlet, wall
+[FLUID VELOCITY]
+  boundaryTypeMap = udfDirichlet, zeroNeumann, zeroDirichlet
   residualTol = 1e-6
   density = 1.0
   viscosity = -4.8e4
 
-[TEMPERATURE]
-  boundaryTypeMap = inlet, outlet, flux
-  rhoCp = 1.0
-  conductivity = -818400.0
+[SCALAR TEMPERATURE]
+  boundaryTypeMap = udfDirichlet, zeroNeumann, udfNeumann
+  transportCoeff = 1.0
+  diffusionCoeff = -818400.0
   residualTol = 1.0e-6

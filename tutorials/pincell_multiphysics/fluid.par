@@ -12,21 +12,22 @@
   numSteps = 2000
   dt = 2.5e-3
   timeStepper = tombo2
-  writeControl = steps
-  writeInterval = 200
+  checkpointControl = steps
+  checkpointInterval = 200
   polynomialOrder = 5
+  scalars = temperature
 
-[VELOCITY]
+[FLUID VELOCITY]
   viscosity = -500.0
   density = 1.0
-  boundaryTypeMap = w, v, O, symx, symx, symy, symy
+  boundaryTypeMap = zeroDirichlet, udfDirichlet, zeroNeumann, zeroDirichletX/zeroNeumann, zeroDirichletX/zeroNeumann, zeroDirichletY/zeroNeumann, zeroDirichletY/zeroNeumann
   residualTol = 1.0e-7
 
-[PRESSURE]
+[FLUID PRESSURE]
   residualTol = 1.0e-6
 
-[TEMPERATURE]
-  conductivity = -2.195
-  rhoCp = 1.0
-  boundaryTypeMap = f, t, I, I, I, I, I
+[SCALAR TEMPERATURE]
+  diffusionCoeff = -2.195
+  transportCoeff = 1.0
+  boundaryTypeMap = udfNeumann, udfDirichlet, zeroNeumann, zeroNeumann, zeroNeumann, zeroNeumann, zeroNeumann
   residualTol = 1.0e-6

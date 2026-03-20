@@ -13,18 +13,18 @@
   timeStepper = tombo2
   subCyclingSteps = 2
 
-  writeControl = steps
-  writeInterval = 100
+  checkpointControl = steps
+  checkpointInterval = 100
 
   filtering = hpfrt
   filterWeight = 0.1/${dt}
   filterModes = 1
 
-[PRESSURE]
+[FLUID PRESSURE]
   residualTol = 1e-04
 
-[VELOCITY]
-  boundaryTypeMap = inlet, outlet, wall
+[FLUID VELOCITY]
+  boundaryTypeMap = udfDirichlet, zeroNeumann, zeroDirichlet
   density = 1.0
   viscosity = -19000
   residualTol = 1e-06

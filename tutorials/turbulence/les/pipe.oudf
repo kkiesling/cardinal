@@ -1,6 +1,6 @@
-void scalarNeumannConditions(bcData * bc)
+void udfNeumann(bcData * bc)
 {
-  bc->flux = 1.0; // heat flux
+  bc->fluxScalar = 1.0; // heat flux
 }
 
 @kernel void periodicSource(const dlong Nelements, const dlong offset, const dfloat gamma, @restrict const dfloat * vel_z, @restrict dfloat * QVOL)

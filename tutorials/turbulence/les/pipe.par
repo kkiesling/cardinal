@@ -5,7 +5,8 @@
   polynomialOrder = 7
   numSteps = 100000
   dt = targetCFL=0.5 + initial=1e-4
-  writeInterval = 2000
+  checkpointInterval = 2000
+  scalars = temperature
   constFlowRate = meanVelocity=1.0 + direction=Z
 
   # comment out to run DNS (no LES filtering)
@@ -13,17 +14,17 @@
   filterWeight = 5.0
   filterModes = 2
 
-[PRESSURE]
+[FLUID PRESSURE]
   residualTol = 1e-06
 
-[VELOCITY]
-  boundaryTypeMap = W
+[FLUID VELOCITY]
+  boundaryTypeMap = zeroDirichlet
   residualTol = 1e-07
   density = 1.0
   viscosity = -5000
 
-[TEMPERATURE]
-  boundaryTypeMap = f
+[SCALAR TEMPERATURE]
+  boundaryTypeMap = udfNeumann
   residualTol = 1e-07
-  rhoCp = 1.0
-  conductivity = -5000
+  transportCoeff = 1.0
+  diffusionCoeff = -5000
